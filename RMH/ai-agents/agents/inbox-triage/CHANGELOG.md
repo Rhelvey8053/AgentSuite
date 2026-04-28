@@ -1,5 +1,11 @@
 # InboxTriage Changelog
 
+## v2.8.3 — 2026-04-28
+**steps_used counter instrumentation, STATS compose URL fix**
+- Added `STEPS_USED` counter: initialized to 0 at run start, incremented after each search, select-all, delete batch, label batch, extract_page_text, screenshot, and compose open — reported as `steps_used` in STATS line
+- Added step efficiency target note: <= 4 steps/email (prior failure mode was ~9 steps/email, caught by transcript reading — now catchable from STATS data)
+- Fixed STATS compose: changed from pressing C to navigating directly to mail.google.com — prevents Gmail from reopening the minimized Report draft as the STATS compose window
+
 ## v2.8.2 — 2026-04-06
 **Counter init, step budget, cumulative reset warning, actions_taken definition**
 - Added explicit counter initialization block (`= 0`) for all four counters at run start — fixes `read_audited: 0` bug from Run 6

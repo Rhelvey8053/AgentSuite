@@ -1,4 +1,4 @@
-# /InboxTriage — Gmail Full Inbox Audit Agent v2.8.2
+# /InboxTriage — Gmail Full Inbox Audit Agent v2.8.3
 # ─────────────────────────────────────────────────────────────
 # CHANGELOG:
 #   v1.0.0 — Initial prompt
@@ -16,6 +16,8 @@
 #   v2.7.0 — Public template release
 #   v2.8.0 — Two-tier retention rules, [YOUR_PREFIX]/Newsletters label
 #   v2.8.1 — STATS draft compose fix: minimize not Escape (patch)
+#   v2.8.3 — steps_used counter instrumentation, STATS compose URL
+#             fix (patch)
 #   v2.8.2 — Counter init, step budget, cumulative reset warning,
 #             actions_taken definition (patch)
 #
@@ -72,6 +74,8 @@ If any step times out or errors: log it, skip, continue.
   At step 100, check how many emails remain — if you cannot finish
   at 3 steps/email, skip Step 3 and go directly to FINAL STEP.
 - If steps exceed 150: stop, go directly to FINAL STEP
+- Report STEPS_USED in the STATS line. Target: <= 4 steps/email
+  (STEPS_USED / total_processed). Prior failure mode: ~9 steps/email.
 
 ---
 
@@ -87,6 +91,10 @@ UNREAD_PROCESSED = 0  (increment for each email touched in Step 2)
 READ_AUDITED = 0      (increment for each email touched in Step 3)
 REMOVED_THIS_RUN = 0  (increment for each email moved to trash)
 DRAFTED_REPLIES = 0   (increment for each draft saved in Step 5)
+STEPS_USED = 0        (increment by 1 after each: search executed,
+                       select-all action, delete batch, label-apply
+                       batch, extract_page_text call, screenshot,
+                       compose window opened)
 Use these exact counter values in the STATS line — do not estimate.
 
 Search `label:Agent-Stats INBOXTRIAGE` — open most recent INBOXTRIAGE
@@ -343,18 +351,21 @@ Click Compose.
 5. Wait 2 seconds for autosave to complete
 
 **Compose STATS Email:**
-Click Compose (new window — confirm it is a fresh compose, not the previous one).
+Navigate directly to mail.google.com in the address bar (do NOT press C
+or click Compose — navigating forces a fresh compose and avoids
+reopening the minimized Report draft).
 1. Click To field → type [YOUR_EMAIL] → press Tab
 2. Click Subject field → type: STATS | InboxTriage | {current_date} | Run [N] → press Tab
 3. Click body field → press Ctrl+A then Delete → type KPI line:
    INBOXTRIAGE | {current_date} | start_time: [HH:MM] | end_time: [HH:MM] |
    run_time_min: [N] | kill_time_reached: [yes/no] | step_kill_reached: [yes/no] |
    new_unread_since_last_run: [N] | total_processed: [N] | removed_this_run: [N] |
-   cumulative_removed: [N] | net_cleared: [N] | drafted_replies: [N]
+   cumulative_removed: [N] | net_cleared: [N] | drafted_replies: [N] |
+   steps_used: [N]
 4. Click the minimize button (dash icon)
    DO NOT press Escape
 5. Wait 2 seconds
 6. Open the saved draft → apply Gmail label "Agent-Stats" to it
 
 Output final summary:
-"✓ InboxTriage v2.8.2 complete — [N] processed, [N] removed, [N] drafted."
+"✓ InboxTriage v2.8.3 complete — [N] processed, [N] removed, [N] drafted."

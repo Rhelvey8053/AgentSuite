@@ -23,8 +23,10 @@ Every agent run self-reports via a pipe-separated KPI line in a self-sent email 
 INBOXTRIAGE | {date} | start_time: HH:MM | end_time: HH:MM | run_time_min: N |
 kill_time_reached: yes/no | step_kill_reached: yes/no |
 new_unread_since_last_run: N | total_processed: N | removed_this_run: N |
-cumulative_removed: N | net_cleared: N | drafted_replies: N
+cumulative_removed: N | net_cleared: N | drafted_replies: N | steps_used: N
 ```
+`steps_used` added in v2.8.3. Absent in pre-v2.8.3 records — treat as N/A.
+Target: `steps_used / total_processed <= 4`. Prior failure mode: ~9 steps/email.
 
 **WeekBrief schema:**
 ```
@@ -60,14 +62,12 @@ pages_navigated: N
 
 **Cumulative field name mismatch** — if a prompt version renames a STATS field, the next run's lookback search won't find it and will silently default to 0. This compounded across 9 of 10 runs before being caught by data audit. Any field rename needs a migration note in the prompt.
 
-**Second compose reuse** — when the agent minimizes the Report draft then presses `c` for a second STATS compose, Gmail can reopen the minimized draft instead. The v2.8.2 prompt warns against this but has no recovery path.
+**Second compose reuse** — when the agent minimizes the Report draft then presses `c` for a second STATS compose, Gmail can reopen the minimized draft instead. Fixed in v2.8.3: navigate directly to mail.google.com instead of pressing `c`.
 
-**Step efficiency** — Runs 7 and 10 hit the 150-step kill switch. Root cause: ~9 steps/email vs a 3-step target. The agent was taking screenshots between labeling actions and running `extract_page_text` redundantly. The STATS line does not currently log `steps_used`, so this is caught by transcript reading, not data.
+**Step efficiency** — Runs 7 and 10 hit the 150-step kill switch. Root cause: ~9 steps/email vs a 3-step target. The agent was taking screenshots between labeling actions and running `extract_page_text` redundantly. Fixed in v2.8.3: `steps_used` field added to STATS schema — now measurable from data, not just transcripts.
 
-## Open work (from process-and-trials.md)
+## Open work
 
-- `steps_used` field missing from InboxTriage STATS schema — no programmatic way to measure step efficiency
-- Second compose bug has no reliable fix in v2.8.2 (navigate to compose URL directly instead of pressing `c`)
-- `kpi-report/CHANGELOG.md` does not exist
 - Run numbering discrepancy between transcript ("Run 9 partial") and STATS history ("Run 7") — unresolved
 - WeekBrief schema v2 fields (`carried_assignments`, `completed_since_last_run`) not reflected in setup guide
+- `tests/test_kpi_parser.py` covers parsing and validation logic; run with `python tests/test_kpi_parser.py`
